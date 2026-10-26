@@ -1,49 +1,68 @@
-# Base Tools
-pip
-pip-tools
-
-# Pipeline & Workflow
-dvc
-
-# Core Framework
-langchain
+# =============================================================================
+# Core ML/LLM
+# =============================================================================
 langchain-openai
+langchain-core
 pydantic-ai-slim[openai,google,groq]==1.59.0
 
-# Azure & Redis Entra ID Integration
-# REMOVE THE VERSION PIN on azure-identity and PyJWT.
-# Let redis-entraid force the correct versions for the whole tree.
+# =============================================================================
+# API Framework
+# =============================================================================
+fastapi
+uvicorn[standard]
+pydantic
+pydantic-settings
+
+# =============================================================================
+# Azure & Redis
+# =============================================================================
 azure-identity
 azure-ai-ml
 azureml-mlflow
 redis
 redis-entraid
-
-# API & Server
-fastapi
-uvicorn
 fastapi-cache2
-Jinja2
 
-# Environment & Data
-python-dotenv
+# =============================================================================
+# Data Processing
+# =============================================================================
 pandas
 openpyxl
-matplotlib
+numpy
 scikit-learn
+pyyaml
 
-# API & Server
-fastapi
-uvicorn
-git+https://github.com/DavisAgyemang/ccss_web_api_tool.git
+# =============================================================================
+# Observability
+# =============================================================================
+structlog
+python-dotenv
 
-# Azure Integration
-azureml-mlflow
-azure-ai-ml
-azure-identity
-azure-search-documents
+# =============================================================================
+# DVC Pipeline
+# =============================================================================
+dvc
 
-# Development & Testing
-pytest
-ruff
-pre-commit
+# =============================================================================
+# Utilities
+# =============================================================================
+typer
+tqdm
+
+# =============================================================================
+# Dev Dependencies (optional, install with: pip install -e .[dev])
+# =============================================================================
+# pytest
+# pytest-asyncio
+# pytest-cov
+# ruff
+# mypy
+# bandit
+# pre-commit
+# pip-audit
+
+# =============================================================================
+# Eval Dependencies (optional, install with: pip install -e .[eval])
+# =============================================================================
+# matplotlib
+# plotly

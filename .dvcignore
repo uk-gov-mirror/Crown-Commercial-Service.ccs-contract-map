@@ -1,3 +1,26 @@
-# Add patterns of files dvc should ignore, which could improve
-# the performance. Learn more at
-# https://dvc.org/doc/user-guide/dvcignore
+# DVC ignore patterns - files tracked by DVC, not Git
+
+# Semantic anchors (large generated file)
+semantic_anchors.json
+semantic_anchors2.json
+
+# Data files
+data/input/*.xlsx
+data/input/*_train.tsv
+data/input/*_test.tsv
+data/results/*.csv
+data/results/*.json
+data/results/*.png
+
+# Model artifacts
+*.pkl
+*.joblib
+*.model
+
+# DVC cache
+.dvc/cache
+.dvc/tmp
+
+# Local config
+.env
+.env.local

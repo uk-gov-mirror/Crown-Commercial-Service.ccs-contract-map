@@ -49,6 +49,8 @@ stages:
     deps:
       - eval/run_gridsearch.py
       - eval/run_eval.py
+      - src/contractmap/classifier.py
+      - src/contractmap/compat.py
       - ${data.semantic_anchors_json}
       - ${data.train_tsv}
     params:

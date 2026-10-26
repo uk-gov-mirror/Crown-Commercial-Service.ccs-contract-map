@@ -1,0 +1,90 @@
+services:
+  
+  # Redis Cache (with Azure Entra ID support simulation) 
+  redis:
+    image: redis:7-alpine
+    container_name: ccs-contract-map-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  
+  # Main API Service
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: ccs-contract-map-api
+    ports:
+      - "8000:8000"
+    environment:
+      # Required - Azure OpenAI
+      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
+      - AZURE_OPENAI_KEY=${AZURE_OPENAI_KEY}
+      - DEPLOYMENT_NAME=${DEPLOYMENT_NAME}
+      - AZURE_OPENAI_API_VERSION=${AZURE_OPENAI_API_VERSION:-2024-02-01}
+
+      # Optional - Redis (for caching)
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+
+      # Optional - MLflow tracking
+      - MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI}
+      - MLFLOW_EXPERIMENT_NAME=${MLFLOW_EXPERIMENT_NAME:-ContractMap-Evaluation}
+
+      # API Configuration
+      - API_HOST=0.0.0.0
+      - API_PORT=5000
+      - API_WORKERS=${API_WORKERS:-2}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - ENVIRONMENT=production
+
+      # Classifier thresholds (tunable)
+      - KEYWORD_THRESHOLD=${KEYWORD_THRESHOLD:-3}
+      - KEYWORD_MARGIN=${KEYWORD_MARGIN:-5}
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      # Mount semantic anchors for live updates (optional)
+      - ./semantic_anchors.json:/app/semantic_anchors.json:ro
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  
+  # Optional: MLflow UI for experiment tracking
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v3.9.0
+    container_name: ccs-contract-map-mlflow
+    ports:
+      - "5000:5000"
+    environment:
+      - MLFLOW_TRACKING_URI=sqlite:///mlflow/mlflow.db
+    volumes:
+      - mlflow_data:/mlflow
+    command: mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri sqlite:///mlflow/mlflow.db
+    profiles:
+      - mlflow
+
+volumes:
+  redis_data:
+  mlflow_data:
+
+networks:
+  default:
+    name: ccs-contract-map-network

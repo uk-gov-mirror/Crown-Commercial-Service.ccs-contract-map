@@ -1,0 +1,79 @@
+# Git & CI
+.git
+.gitignore
+.github
+.gitlab-ci.yml
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+env/
+.venv/
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.mypy_cache/
+.ruff_cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Data & Models
+data/
+*.xlsx
+*.tsv
+*.csv
+*.pkl
+*.joblib
+
+# DVC
+.dvc/
+dvc.lock
+dvc.yaml
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# Documentation
+README.md
+docs/
+*.md
+
+# TypeScript tests
+typescript_tests/
+node_modules/
+package*.json
+playwright.config.ts
+
+# Evaluation scripts
+eval/
+tests/
+
+# Local config
+.env
+.env.*
+!.env.example

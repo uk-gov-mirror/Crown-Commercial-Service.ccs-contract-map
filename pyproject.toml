@@ -1,14 +1,136 @@
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "contractmap"
-version = "0.0.1"
+version = "0.2.0"
+description = "Hybrid keyword + LLM classifier for CCS contract categories"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    # Core ML/LLM
+    "langchain-openai>=0.2.0",
+    "langchain-core>=0.3.0",
+    "pydantic-ai-slim[openai,google,groq]>=1.59.0",
+
+    # API Framework
+    "fastapi>=0.110.0",
+    "uvicorn[standard]>=0.30.0",
+    "pydantic>=2.8.0",
+    "pydantic-settings>=2.5.0",
+
+    # Azure & Redis
+    "azure-identity>=1.15.0",
+    "azure-ai-ml>=1.33.0",
+    "azureml-mlflow>=1.62.0",
+    "redis>=5.0.0",
+    "redis-entraid>=1.2.0",
+    "fastapi-cache2>=0.2.2",
+
+    # Data Processing
+    "pandas>=2.2.0",
+    "openpyxl>=3.1.0",
+    "numpy>=1.26.0",
+    "scikit-learn>=1.4.0",
+    "pyyaml>=6.0",
+
+    # Observability
+    "structlog>=24.1.0",
+    "python-dotenv>=1.0.0",
+
+    # DVC Pipeline
+    "dvc>=3.0.0",
+
+    # Utilities
+    "typer>=0.12.0",
+    "tqdm>=4.66.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=4.1.0",
+    "ruff>=0.4.0",
+    "mypy>=1.9.0",
+    "bandit>=1.7.0",
+    "pre-commit>=3.6.0",
+    "pip-audit>=2.6.0",
+]
+eval = [
+    "matplotlib>=3.8.0",
+    "plotly>=5.18.0",
+]
 
 [tool.setuptools.packages.find]
-where = ["."]
+where = ["src"]
+include = ["contractmap*"]
+
+[tool.setuptools.package-dir]
+"" = "src"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["."]
+pythonpath = ["src"]
+asyncio_mode = "auto"
+addopts = "-v --tb=short"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+    "PT",  # pytest
+    "ARG", # flake8-unused-arguments
+]
+ignore = [
+    "E501",  # line too long (handled by formatter)
+    "B008",  # do not perform function calls in argument defaults
+]
+per-file-ignores = { "tests/*" = ["S101", "S106"] }
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+no_implicit_optional = true
+strict_optional = true
+show_error_codes = true
+namespace_packages = true
+explicit_package_bases = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+
+[tool.bandit]
+exclude_dirs = ["tests", ".venv", "venv"]
+skips = ["B101", "B601"]  # skip assert and shell injection tests
+
+[tool.coverage.run]
+source = ["src/contractmap"]
+omit = ["tests/*", "*/conftest.py"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]

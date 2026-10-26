@@ -1,10 +1,48 @@
 repos:
+  # Ruff - Fast Python linter and formatter
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    # Ruff version.
-    rev: v0.1.14
+    rev: v0.4.0
     hooks:
-      # Run the linter.
       - id: ruff
-        args: [ --fix ]
-      # Run the formatter.
+        args: [--fix, --exit-non-zero-on-fix]
+        name: ruff (lint)
       - id: ruff-format
+        name: ruff (format)
+
+  # MyPy - Static type checking
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.9.0
+    hooks:
+      - id: mypy
+        args: [--strict, --ignore-missing-imports]
+        additional_dependencies: [pydantic, fastapi, langchain-openai, structlog]
+        name: mypy (type check)
+
+  # Bandit - Security linting
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.9
+    hooks:
+      - id: bandit
+        args: [-r, src, -ll]
+        name: bandit (security)
+
+  # Check for secrets
+  - repo: https://github.com/trufflesecurity/truffleHog
+    rev: v3.63.0
+    hooks:
+      - id: truffleHog
+        args: [--no-verification, --fail, --json]
+        name: truffleHog (secrets)
+
+  # Basic file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-json
+      - id: check-merge-conflict
+      - id: debug-logger
+      - id: detect-private-key

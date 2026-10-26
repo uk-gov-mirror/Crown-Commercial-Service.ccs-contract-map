@@ -43,21 +43,9 @@ Once this process finishes, the system returns a single CCS category name.
 
 The system and its unit tests are all written in python. To install it, first ensure that Python is installed on your system, and then follow these steps:
 
-1. Create a venv:
+1. Run the starter script:
 ```
-python -m venv venv
-```
-2. Load the venv:
-```
-source venv/bin/activate
-```
-3. Update pip:
-```
-python -m pip install --upgrade pip
-```
-4. Install the dependencies:
-```
-python -m pip install -r requirements.txt
+python start.py --setup
 ```
 
 ### TypeScript

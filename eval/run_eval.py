@@ -1,14 +1,24 @@
 import argparse
 import asyncio
 import ast
+import json
 import os
 import sys
 import time
 from pathlib import Path
 from typing import Any
-from dotenv import load_dotenv
 
 import pandas as pd
+from sklearn.metrics import (
+    accuracy_score,
+    f1_score,
+    precision_score,
+    recall_score,
+    classification_report,
+    confusion_matrix,
+)
+
+from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -133,8 +143,8 @@ async def evaluate_truthset(
     # Resolve prompt file
     prompt_file = _resolve_prompt_file(prompt_name)
 
-    # Import classification function
-    from src.core.classification_v2_mix_v5 import keywords_and_llm
+    # Import classification function (using new unified classifier with compat layer)
+    from contractmap import keywords_and_llm
 
     # Load and normalize data
     df = _load_truthset(truthset_path=truthset_path)
@@ -167,7 +177,7 @@ async def evaluate_truthset(
         mlflow_module.log_param("threshold", threshold)
         mlflow_module.log_param("margin", margin)
         mlflow_module.log_param(
-            "classifier", "classification_v2_mix_v5.keywords_and_llm"
+            "classifier", "contractmap.keywords_and_llm (unified)"
         )
         mlflow_module.log_param("prompt_name", prompt_name)
         mlflow_module.log_param("prompt_path", str(prompt_file.resolve()))
@@ -228,29 +238,74 @@ async def evaluate_truthset(
         total_count = len(df)
         accuracy_pct = (correct_count / total_count) * 100
 
+        # Comprehensive metrics
+        macro_f1 = f1_score(df["Category"], df["AI_Prediction"], average="macro", zero_division=0)
+        macro_precision = precision_score(df["Category"], df["AI_Prediction"], average="macro", zero_division=0)
+        macro_recall = recall_score(df["Category"], df["AI_Prediction"], average="macro", zero_division=0)
+        weighted_f1 = f1_score(df["Category"], df["AI_Prediction"], average="weighted", zero_division=0)
+
+        # Per-class metrics
+        class_report = classification_report(df["Category"], df["AI_Prediction"], output_dict=True, zero_division=0)
+        conf_matrix = confusion_matrix(df["Category"], df["AI_Prediction"])
+
+        # Method distribution
+        heuristic_count = sum(1 for r in output_labels if "heuristic" in str(r).lower() or "Heuristic" in str(r))
+        llm_count = total_count - heuristic_count
+
         print("--- Test Results ---")
         print(f"Total Analyzed: {total_count}")
         print(f"Correct Matches: {correct_count}")
         print(f"Accuracy: {accuracy_pct:.2f}%")
+        print(f"Macro F1: {macro_f1:.4f}")
+        print(f"Macro Precision: {macro_precision:.4f}")
+        print(f"Macro Recall: {macro_recall:.4f}")
+        print(f"Weighted F1: {weighted_f1:.4f}")
+        print(f"Heuristic decisions: {heuristic_count} ({heuristic_count/total_count*100:.1f}%)")
+        print(f"LLM fallbacks: {llm_count} ({llm_count/total_count*100:.1f}%)")
         print(f"Wrong predictions: {len(wrong_results)}")
 
         # Save results
         df.to_csv(output_path, index=False)
         print(f"Results saved to {output_path}")
 
+        # Save detailed metrics
+        metrics_path = output_path.parent / f"{output_path.stem}_metrics.json"
+        with open(metrics_path, "w") as f:
+            json.dump({
+                "accuracy_percent": accuracy_pct,
+                "macro_f1": macro_f1,
+                "macro_precision": macro_precision,
+                "macro_recall": macro_recall,
+                "weighted_f1": weighted_f1,
+                "total_samples": total_count,
+                "correct_predictions": int(correct_count),
+                "wrong_predictions": len(wrong_results),
+                "heuristic_decisions": heuristic_count,
+                "llm_fallbacks": llm_count,
+                "per_class_metrics": class_report,
+                "confusion_matrix": conf_matrix.tolist(),
+                "evaluation_duration_seconds": elapsed_seconds,
+            }, f, indent=2)
+        print(f"Detailed metrics saved to {metrics_path}")
+
         # Log metrics to MLflow
         mlflow_module.log_metric("accuracy_percent", accuracy_pct)
+        mlflow_module.log_metric("macro_f1", macro_f1)
+        mlflow_module.log_metric("macro_precision", macro_precision)
+        mlflow_module.log_metric("macro_recall", macro_recall)
+        mlflow_module.log_metric("weighted_f1", weighted_f1)
         mlflow_module.log_metric("correct_predictions", correct_count)
         mlflow_module.log_metric("wrong_predictions", len(wrong_results))
+        mlflow_module.log_metric("heuristic_decisions", heuristic_count)
+        mlflow_module.log_metric("llm_fallbacks", llm_count)
         mlflow_module.log_metric("evaluation_duration_seconds", elapsed_seconds)
 
         # Log artifacts
         mlflow_module.log_artifact(str(output_path.resolve()), artifact_path="results")
+        mlflow_module.log_artifact(str(metrics_path.resolve()), artifact_path="results")
 
         # Log wrong results as JSON if any
         if wrong_results:
-            import json
-
             wrong_results_path = (
                 output_path.parent / f"{output_path.stem}_wrong_results.json"
             )
